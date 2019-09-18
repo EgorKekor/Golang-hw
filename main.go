@@ -11,38 +11,112 @@ import (
 	"strings"
 )
 
-var flagKSortBuffer []string
+type sortObject struct {
+	lines      []string
+	sortSelect []string
+	column 		int
+}
 
-type By func(ind1, ind2 int) bool
-func (by By) Sort(lines[] string) {
+func createSortObject(r io.Reader, columnSort int) (sortObject) {
+	obj := sortObject {}
+	obj.column = columnSort
+	fileScanner := bufio.NewScanner(r)
+
+	for fileScanner.Scan() {
+		obj.lines = append(obj.lines, fileScanner.Text())
+		if columnSort > 0 {
+			strScanner := bufio.NewScanner(strings.NewReader(fileScanner.Text()))
+			strScanner.Split(bufio.ScanWords)
+			wordNum := 1
+			for strScanner.Scan() && wordNum < columnSort {
+				wordNum++
+			}
+
+			if (wordNum == columnSort) {
+				obj.sortSelect = append(obj.sortSelect, strScanner.Text())
+			} else {
+				obj.sortSelect = append(obj.sortSelect, "")
+			}
+		}
+	}
+	if err := fileScanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, "reading file lines:", err)
+	}
+
+	if len(obj.sortSelect) == 0 {
+		for i := 0; i < len(obj.lines); i++ {
+			strScanner := bufio.NewScanner(strings.NewReader(obj.lines[i]))
+			for strScanner.Scan() {
+				obj.sortSelect = append(obj.sortSelect, strScanner.Text())
+			}
+		}
+	}
+
+	return obj;
+}
+
+func (sObj *sortObject) setUniqueMode() {
+	var dublicateSelect []string
+	var dublicateLines []string
+	for orig := 0; orig < len(sObj.lines); orig++ {
+		unique := true
+		for dub := 0; dub < len(dublicateSelect); dub++ {
+			if (sObj.sortSelect[orig] == dublicateSelect[dub]) {
+				unique = false
+				break;
+			}
+		}
+
+		if unique {
+			dublicateSelect = append(dublicateSelect, sObj.sortSelect[orig])
+			dublicateLines = append(dublicateLines, sObj.lines[orig])
+		}
+	}
+	sObj.sortSelect = dublicateSelect
+	sObj.lines = dublicateLines
+}
+
+func (sObj *sortObject) setLowerCaseMode() {
+	for i := 0; i < len(sObj.lines); i++ {
+		sObj.sortSelect[i] = strings.ToLower(sObj.sortSelect[i])
+	}
+}
+
+//  ===================================================
+
+
+type By func(str1, str2 *string) bool
+
+func (by By) Sort(srt_ sortObject) {
 	sortCfg := &stringSorter {
-		lines: lines,
-		by:      by,
+		obj: srt_,
+		by:  by,
 	}
 	sort.Sort(sortCfg)
 }
 
 
 type stringSorter struct {
-	lines[] string
-	by      func(ind1, ind2 int) bool
+	obj sortObject
+	by  func(str1, str2 *string) bool
 }
 
 
 func (sorter *stringSorter) Len() int {
-	return len(sorter.lines)
+	return len(sorter.obj.lines)
 }
 
 func (sorter *stringSorter) Swap(i, j int) {
-	sorter.lines[i], sorter.lines[j] = sorter.lines[j], sorter.lines[i]
-	if len(flagKSortBuffer) > 0 {
-		flagKSortBuffer[i], flagKSortBuffer[j] = flagKSortBuffer[j], flagKSortBuffer[i]
-	}
+	sorter.obj.lines[i], sorter.obj.lines[j] = sorter.obj.lines[j], sorter.obj.lines[i]
+	sorter.obj.sortSelect[i], sorter.obj.sortSelect[j] = sorter.obj.sortSelect[j], sorter.obj.sortSelect[i]
 }
 
+
 func (sorter *stringSorter) Less(i, j int) bool {
-	return sorter.by(i, j)
+	return sorter.by(&sorter.obj.sortSelect[i], &sorter.obj.sortSelect[j])
 }
+
+//  =========================================
 
 
 func main() {
@@ -51,10 +125,9 @@ func main() {
 	flagU := flag.Bool("u", false, "Only first")
 	flagR := flag.Bool("r", false, "Sort low")
 	flagO := flag.Bool("o", false, "Write file")
-	flagN := flag.Bool("n", false, "Numbers sort")
+	//flagN := flag.Bool("n", false, "Numbers sort")
 	flagK := flag.Int("k", 0, "Col number")
 	flag.Parse()
-	isFlags := (*flagO || *flagK > 0 || *flagU || *flagR || *flagF || *flagN)
 
 
 	fileName :=  flag.Args();
@@ -70,78 +143,31 @@ func main() {
 	}()
 
 
+	sortingObj := createSortObject(sourceFile, *flagK);
 
-	var inputData []string
-	fileScanner := bufio.NewScanner(sourceFile)
-
-	for fileScanner.Scan() {
-		inputData = append(inputData, fileScanner.Text())
-	}
-	if err := fileScanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading file lines:", err)
+	simple := func(str1, str2 *string) bool {
+		return *str1 < *str2
 	}
 
-
-
-	simple := func(ind1, ind2 int) bool {
-		return (inputData[ind1] < inputData[ind2])
-	}
-
-	cols := func(ind1, ind2 int) bool {
-		return (flagKSortBuffer[ind1] < flagKSortBuffer[ind2])
+	reverse := func(str1, str2 *string) bool {
+		return *str1 > *str2
 	}
 
 
 
 	if *flagF {
-		for i := 0; i < len(inputData); i++ {
-			inputData[i] = strings.ToLower(inputData[i])
-		}
+		sortingObj.setLowerCaseMode()
 	}
 
 	if *flagU {
-		var dublicate []string
-		for orig := 0; orig < len(inputData); orig++ {
-			unique := true
-			for dub := 0; dub < len(dublicate); dub++ {
-				if (inputData[orig] == dublicate[dub]) {
-					unique = false
-					break;
-				}
-			}
-
-			if unique {
-				dublicate = append(dublicate, inputData[orig])
-			}
-		}
-		inputData = dublicate
-	}
-
-	if *flagK > 0 {
-		if !(*flagR && *flagN) {
-			By(simple).Sort(inputData)
-		}
-
-		for i := 0; i < len(inputData); i++ {
-			strScanner := bufio.NewScanner(strings.NewReader(inputData[i]))
-			strScanner.Split(bufio.ScanWords)
-			wordNum := 1
-			for strScanner.Scan() && wordNum < *flagK {
-				wordNum++
-			}
-
-			if (wordNum == *flagK) {
-				flagKSortBuffer = append(flagKSortBuffer, strScanner.Text())
-			} else {
-				flagKSortBuffer = append(flagKSortBuffer, "")
-			}
-		}
-		By(cols).Sort(inputData)
+		sortingObj.setUniqueMode()
 	}
 
 
-	if !isFlags {
-		By(simple).Sort(inputData)
+	if *flagR {
+		By(reverse).Sort(sortingObj)
+	} else {
+		By(simple).Sort(sortingObj)
 	}
 
 
@@ -149,13 +175,24 @@ func main() {
 
 	if *flagO {
 		// maybe close defer
-		resultFile, _ := os.OpenFile("result.dat", os.O_RDWR | os.O_CREATE, 0755)
+		resultFile, err := os.OpenFile("result.dat", os.O_RDWR | os.O_CREATE, 0755)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		defer func() {
+			if err := sourceFile.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}()
 		output = resultFile
 	} else {
 		output = os.Stdout
 	}
 
-	for i := 0; i < len(inputData); i++ {
-		io.Copy(output, strings.NewReader(inputData[i] + "\n"))
+
+	for i := 0; i < len(sortingObj.lines); i++ {
+		io.Copy(output, strings.NewReader(sortingObj.lines[i] + "\n"))
 	}
+
 }
