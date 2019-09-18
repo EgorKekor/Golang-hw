@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -44,11 +46,8 @@ func createSortObject(r io.Reader, columnSort int) (sortObject) {
 	}
 
 	if len(obj.sortSelect) == 0 {
-		for i := 0; i < len(obj.lines); i++ {
-			strScanner := bufio.NewScanner(strings.NewReader(obj.lines[i]))
-			for strScanner.Scan() {
-				obj.sortSelect = append(obj.sortSelect, strScanner.Text())
-			}
+		for i, _ := range (obj.lines) {
+			obj.sortSelect = append(obj.sortSelect, obj.lines[i])
 		}
 	}
 
@@ -79,6 +78,20 @@ func (sObj *sortObject) setUniqueMode() {
 func (sObj *sortObject) setLowerCaseMode() {
 	for i := 0; i < len(sObj.lines); i++ {
 		sObj.sortSelect[i] = strings.ToLower(sObj.sortSelect[i])
+	}
+}
+
+func (sObj *sortObject) setNumericMode() {
+	for i, _ := range sObj.sortSelect {
+		if num, err := strconv.ParseInt(sObj.sortSelect[i], 10, 64); err == nil {
+			sObj.sortSelect[i] = strconv.FormatInt(num, 10)
+		} else {
+			if err == strconv.ErrRange {
+				sObj.sortSelect[i] = strconv.FormatInt(math.MaxInt64, 10)
+			} else {
+				sObj.sortSelect[i] = ""
+			}
+		}
 	}
 }
 
@@ -125,7 +138,7 @@ func main() {
 	flagU := flag.Bool("u", false, "Only first")
 	flagR := flag.Bool("r", false, "Sort low")
 	flagO := flag.Bool("o", false, "Write file")
-	//flagN := flag.Bool("n", false, "Numbers sort")
+	flagN := flag.Bool("n", false, "Numbers sort")
 	flagK := flag.Int("k", 0, "Col number")
 	flag.Parse()
 
@@ -163,12 +176,18 @@ func main() {
 		sortingObj.setUniqueMode()
 	}
 
+	if *flagN {
+		sortingObj.setNumericMode()
+	}
+
 
 	if *flagR {
 		By(reverse).Sort(sortingObj)
 	} else {
 		By(simple).Sort(sortingObj)
 	}
+
+
 
 
 	var output io.Writer
@@ -191,8 +210,8 @@ func main() {
 	}
 
 
-	for i := 0; i < len(sortingObj.lines); i++ {
-		io.Copy(output, strings.NewReader(sortingObj.lines[i] + "\n"))
+	for _, str := range (sortingObj.lines) {
+		io.Copy(output, strings.NewReader(str + "\n"))
 	}
 
 }
