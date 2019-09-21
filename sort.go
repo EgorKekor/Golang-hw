@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -24,8 +23,8 @@ func createSortObject(r io.Reader, columnSort int) (sortObject) {
 	obj.column = columnSort
 	fileScanner := bufio.NewScanner(r)
 
-	for fileScanner.Scan() {
-		obj.lines = append(obj.lines, fileScanner.Text())
+	for i := 0; fileScanner.Scan(); i++ {
+		obj.lines = append(obj.lines, strings.TrimLeft(fileScanner.Text(), " "))
 		if columnSort > 0 {
 			strScanner := bufio.NewScanner(strings.NewReader(fileScanner.Text()))
 			strScanner.Split(bufio.ScanWords)
@@ -78,20 +77,51 @@ func (sObj *sortObject) setUniqueMode() {
 func (sObj *sortObject) setLowerCaseMode() {
 	for i := 0; i < len(sObj.lines); i++ {
 		sObj.sortSelect[i] = strings.ToLower(sObj.sortSelect[i])
+		sObj.lines[i] = strings.ToLower(sObj.lines[i])
 	}
 }
 
 func (sObj *sortObject) setNumericMode() {
+	var numericLines []string
+	var numericSelect []string
 	for i, _ := range sObj.sortSelect {
 		if num, err := strconv.ParseInt(sObj.sortSelect[i], 10, 64); err == nil {
-			sObj.sortSelect[i] = strconv.FormatInt(num, 10)
+			numericLines = append(numericLines, sObj.lines[i])
+			numericSelect = append(numericSelect, strconv.FormatInt(num, 10))
 		} else {
 			if err == strconv.ErrRange {
-				sObj.sortSelect[i] = strconv.FormatInt(math.MaxInt64, 10)
-			} else {
-				sObj.sortSelect[i] = ""
+				numericLines = append(numericLines, sObj.lines[i])
+				numericSelect = append(numericSelect, strconv.FormatInt(math.MaxInt64, 10))
 			}
 		}
+	}
+	sObj.lines = numericLines
+	sObj.sortSelect = numericSelect
+}
+
+func (sObj *sortObject) writeInFile(ok bool, filename string) {
+
+	var output io.Writer
+
+	if ok {
+		resultFile, err := os.OpenFile(filename, os.O_RDWR | os.O_CREATE, 0755)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		defer func() {
+			if err := resultFile.Close(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+		output = resultFile
+	} else {
+		output = os.Stdout
+	}
+
+
+	for _, str := range (sObj.lines) {
+		io.Copy(output, strings.NewReader(str + "\n"))
 	}
 }
 
@@ -132,86 +162,62 @@ func (sorter *stringSorter) Less(i, j int) bool {
 //  =========================================
 
 
-func main() {
-
-	flagF := flag.Bool("f", false, "Ignore register")
-	flagU := flag.Bool("u", false, "Only first")
-	flagR := flag.Bool("r", false, "Sort low")
-	flagO := flag.Bool("o", false, "Write file")
-	flagN := flag.Bool("n", false, "Numbers sort")
-	flagK := flag.Int("k", 0, "Col number")
-	flag.Parse()
-
-
-	fileName :=  flag.Args();
-	sourceFile, err := os.OpenFile(fileName[0], os.O_RDONLY, 0755)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	defer func() {
-		if err := sourceFile.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-
-	sortingObj := createSortObject(sourceFile, *flagK);
-
-	simple := func(str1, str2 *string) bool {
-		return *str1 < *str2
-	}
-
-	reverse := func(str1, str2 *string) bool {
-		return *str1 > *str2
-	}
-
-
-
-	if *flagF {
-		sortingObj.setLowerCaseMode()
-	}
-
-	if *flagU {
-		sortingObj.setUniqueMode()
-	}
-
-	if *flagN {
-		sortingObj.setNumericMode()
-	}
-
-
-	if *flagR {
-		By(reverse).Sort(sortingObj)
-	} else {
-		By(simple).Sort(sortingObj)
-	}
-
-
-
-
-	var output io.Writer
-
-	if *flagO {
-		// maybe close defer
-		resultFile, err := os.OpenFile("result.dat", os.O_RDWR | os.O_CREATE, 0755)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-		defer func() {
-			if err := sourceFile.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}()
-		output = resultFile
-	} else {
-		output = os.Stdout
-	}
-
-
-	for _, str := range (sortingObj.lines) {
-		io.Copy(output, strings.NewReader(str + "\n"))
-	}
-
-}
+//func main() {
+//
+//	flagF := flag.Bool("f", false, "Ignore register")
+//	flagU := flag.Bool("u", false, "Unique")
+//	flagR := flag.Bool("r", false, "Sort low")
+//	flagO := flag.Bool("o", false, "Write file")
+//	flagN := flag.Bool("n", false, "Numbers sort")
+//	flagK := flag.Int("k", 0, "Col number")
+//	flag.Parse()
+//
+//
+//	fileName :=  flag.Args();
+//	sourceFile, err := os.OpenFile(fileName[0], os.O_RDONLY, 0755)
+//	if err != nil {
+//		log.Fatal(err)
+//		return
+//	}
+//	defer func() {
+//		if err := sourceFile.Close(); err != nil {
+//			log.Fatal(err)
+//		}
+//	}()
+//
+//
+//	sortingObj := createSortObject(sourceFile, *flagK);
+//
+//	simple := func(str1, str2 *string) bool {
+//		return *str1 < *str2
+//	}
+//
+//	reverse := func(str1, str2 *string) bool {
+//		return *str1 > *str2
+//	}
+//
+//
+//
+//	if *flagF {
+//		sortingObj.setLowerCaseMode()
+//	}
+//
+//	if *flagU {
+//		sortingObj.setUniqueMode()
+//	}
+//
+//	if *flagN {
+//		sortingObj.setNumericMode()
+//	}
+//
+//
+//	if *flagR {
+//		By(reverse).Sort(sortingObj)
+//	} else {
+//		By(simple).Sort(sortingObj)
+//	}
+//
+//
+//	sortingObj.writeInFile(*flagO, "result.dat")
+//
+//}
