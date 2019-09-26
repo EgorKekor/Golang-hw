@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b3043bb3-4eb2-4369-b8a9-153a1a8dc6a4" name="Default Changelist" comment="" />
+    <list default="true" id="b3043bb3-4eb2-4369-b8a9-153a1a8dc6a4" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/extra" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/extra_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/main_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/signer.go" beforeDir="false" afterPath="$PROJECT_DIR$/signer.go" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,12 +38,23 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Go Test.TestSigner in Goland-hw/signer">
+  <component name="RunManager" selected="Go Test.TestSigner in Golang-hw/signer">
     <configuration name="go build signer.go" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="signer" />
       <working_directory value="$PROJECT_DIR$/" />
       <kind value="FILE" />
       <filePath value="$PROJECT_DIR$/signer.go" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestPipeline in Golang-hw/signer" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="signer" />
+      <working_directory value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="Golang-hw/signer" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
+      <pattern value="^TestPipeline$" />
       <method v="2" />
     </configuration>
     <configuration name="TestSigner in Goland-hw/signer" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
@@ -46,6 +63,17 @@
       <framework value="gotest" />
       <kind value="PACKAGE" />
       <package value="Goland-hw/signer" />
+      <pattern value="^TestSigner$" />
+      <method v="2" />
+    </configuration>
+    <configuration name="TestSigner in Golang-hw/signer" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true" nameIsGenerated="true">
+      <module name="signer" />
+      <working_directory value="$PROJECT_DIR$" />
+      <framework value="gotest" />
+      <kind value="PACKAGE" />
+      <package value="Golang-hw/signer" />
+      <directory value="$PROJECT_DIR$/" />
+      <filePath value="$PROJECT_DIR$/" />
       <pattern value="^TestSigner$" />
       <method v="2" />
     </configuration>
@@ -71,9 +99,13 @@
       <item itemvalue="Go Build.go build signer.go" />
       <item itemvalue="Go Test.go test signer" />
       <item itemvalue="Go Test.TestSigner in Goland-hw/signer" />
+      <item itemvalue="Go Test.TestSigner in Golang-hw/signer" />
+      <item itemvalue="Go Test.TestPipeline in Golang-hw/signer" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Test.TestSigner in Golang-hw/signer" />
+        <item itemvalue="Go Test.TestPipeline in Golang-hw/signer" />
         <item itemvalue="Go Test.TestSigner in Goland-hw/signer" />
         <item itemvalue="Go Test.go test signer" />
         <item itemvalue="Go Build.go build signer.go" />
@@ -88,7 +120,9 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>

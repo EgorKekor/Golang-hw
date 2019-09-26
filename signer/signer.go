@@ -2,7 +2,7 @@ package main
 
 import (
 	"runtime"
-	"strconv"
+	"sort"
 	"sync"
 	"time"
 )
@@ -18,24 +18,32 @@ type CrcData struct {
 }
 
 func CRC(data string, ind int, outp chan CrcData, inProc *int, mut sync.Mutex, fromMd5 bool) {		//CRC COUNTER
-	println("Start CRC[" + strconv.Itoa(ind) + "]")
+	//println("Start CRC[" + strconv.Itoa(ind) + "]")
 	hash := DataSignerCrc32(data)
 	outp<-CrcData{hash, ind, fromMd5}
 	mut.Lock()
 	*inProc--
 	mut.Unlock()
-	println("Finish CRC[" + strconv.Itoa(ind) + "]")
+	//println("Finish CRC[" + strconv.Itoa(ind) + "]")
+	return
+}
+
+func simpleCRC(data string, ind int, outp chan CrcData) {
+	//println("Start CRC[" + strconv.Itoa(ind) + "]")
+	hash := DataSignerCrc32(data)
+	outp<-CrcData{hash, ind, false}
+	//println("Finish CRC[" + strconv.Itoa(ind) + "]")
 	return
 }
 
 func MD5(data string, ind int, outp chan CrcData, inProc *int, mut sync.Mutex) {		//MD5 COUNTER
-	println("Start MD5[" + strconv.Itoa(ind) + "]")
+	//println("Start MD5[" + strconv.Itoa(ind) + "]")
 	hash := DataSignerMd5(data)
 	outp<-CrcData{hash, ind, true}
 	mut.Lock()
 	*inProc--
 	mut.Unlock()
-	println("Finish MD5[" + strconv.Itoa(ind) + "]")
+	//println("Finish MD5[" + strconv.Itoa(ind) + "]")
 	return
 }
 
@@ -87,14 +95,55 @@ func startConstructorWorker(inp chan CrcData, outp chan interface{}) {
 }
 
 
-func startMultiConstructorWorker(inp chan CrcData, outp chan interface{}) {
+func startMultiConstructorWorker(inp chan CrcData, outp chan interface{}, finish chan bool) {
 	println("Start MultiConstructor worker")
+	concat := make(map[int]string)
+	for th := 0; th < 6; th++ {
+		data := <-inp
+		concat[data.ind] = data.data
+	}
 
+	result := ""
+	for th := 0; th < 6; th++ {
+		result += concat[th]
+	}
+	outp<-result
+	finish<-true
 
 	println("Kill MultiConstructor worker")
 	return
 }
 
+
+type By func(str1, str2 *string) bool
+
+func (by By) Sort(str []string) {
+	sortCfg := &stringSorter {
+		obj: str,
+		by:  by,
+	}
+	sort.Sort(sortCfg)
+}
+
+
+type stringSorter struct {
+	obj []string
+	by  func(str1, str2 *string) bool
+}
+
+
+func (sorter *stringSorter) Len() int {
+	return len(sorter.obj)
+}
+
+func (sorter *stringSorter) Swap(i, j int) {
+	sorter.obj[i], sorter.obj[j] = sorter.obj[j], sorter.obj[i]
+}
+
+
+func (sorter *stringSorter) Less(i, j int) bool {
+	return sorter.by(&sorter.obj[i], &sorter.obj[j])
+}
 
 
 
@@ -111,7 +160,8 @@ func ExecutePipeline(workers ...job) {
 		go worker(channels[i], channels[i + 1])
 	}
 	runtime.Gosched()
-	time.Sleep(100 * time.Second)
-
+	<-channels[len(channels) - 2]
+	time.Sleep(10 * time.Millisecond)
+	return
 
 }
