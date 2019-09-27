@@ -114,42 +114,34 @@ func TestSigner(t *testing.T) {
 			}
 		}),
 		job(func(in, out chan interface{}) {
-			CrcOutput := make(chan CrcData, len(inputData) * 2)		//Все результаты CRC идут сюда
-			CrcInput := make(chan CrcData, len(inputData) * 2)
+			CrcOutput := make(chan CrcData, 1)		// Все результаты CRC идут сюда
+			CrcInput := make(chan CrcData, 1)		// СRС воркер читает отсюда
+			Md5Input := make(chan CrcData, 1)		// MD5 воркер читает отсюда
 
-			Md5Input := make(chan CrcData, len(inputData))			//Воркер MD5 берет отсюда
+			channelsUsers := sync.WaitGroup{}		// СRC и MD5 функции используют CrcInput Md5Input которые надо закрыть чтобы убить воркеров
+			localWorkers := sync.WaitGroup{}
 
-			var mutex sync.Mutex
-			inProcess := 0											//Те кому нужно писать в канал
-
-			go startMd5Worker(Md5Input, CrcInput, &inProcess, mutex)
-			go startCrcWorker(CrcInput, CrcOutput, &inProcess, mutex)
-			go startConstructorWorker(CrcOutput, out)
-
+			localWorkers.Add(3)
+			go startMd5Worker(Md5Input, CrcInput, &channelsUsers, &localWorkers)
+			go startCrcWorker(CrcInput, CrcOutput, &channelsUsers, &localWorkers)
+			go startConstructorWorker(CrcOutput, out, &localWorkers)
 
 			i := 0
 			for data := range in {
-				println("Data[" + strconv.Itoa(i) + "] pushed")
 				dataString := strconv.Itoa(data.(int))
-				mutex.Lock()
-				inProcess += 3
-				mutex.Unlock()
-				Md5Input <- CrcData{dataString, i, true} //MD5 демон вызовет горутину для расчета md5
-				CrcInput <- CrcData{dataString, i, false} //CRC демон вызовет горутину для расчета crc
+				channelsUsers.Add(3)
+				Md5Input <- CrcData{dataString, i, true}
+				CrcInput <- CrcData{dataString, i, false}
 				i++
-				if len(in) == 0 {
-					println("BREAK WORKER 1")
-					break
-				}
 				runtime.Gosched()
 			}
 
-			for inProcess > 0 {runtime.Gosched()}		// Пока все расчеты не закончились
+			channelsUsers.Wait()
 			close(Md5Input)
 			close(CrcInput)
 			for len(CrcOutput) > 0 {runtime.Gosched()}		// Новым данным неоткуда взяться, спим пока конструктор их соберет
 			close(CrcOutput)								// Это убьет конструктор
-			println("All local workers finished")
+			localWorkers.Wait()
 			return
 		}),
 
@@ -161,10 +153,6 @@ func TestSigner(t *testing.T) {
 			multi := make([]chan CrcData, 0)
 
 			for data := range in {
-				if _, ok := data.(EOD); ok {
-					println("BREAK WORKER 2")
-					break
-				}
 				println("input-----", data.(string))
 
 				multi = append(multi, make(chan CrcData, 6))
@@ -177,6 +165,7 @@ func TestSigner(t *testing.T) {
 				dataNum++
 				runtime.Gosched()
 			}
+			println("BREAK WORKER 2")
 
 			println("Wait constructors begin")
 			for constructorNum := 0; constructorNum < dataNum; {
@@ -185,8 +174,6 @@ func TestSigner(t *testing.T) {
 				println(constructorNum)
 			}
 			println("Constructors end")
-
-			out <- EOD{}
 		}),
 
 		//  ======================================================
@@ -200,11 +187,11 @@ func TestSigner(t *testing.T) {
 
 			for data := range in {
 				if _, ok := data.(EOD); ok {
-					println("BREAK WORKER 3")
 					break
 				}
 				sortData = append(sortData, data.(string))
 			}
+			println("BREAK WORKER 3")
 
 			By(simple).Sort(sortData)
 
@@ -217,8 +204,6 @@ func TestSigner(t *testing.T) {
 			}
 
 			out<-result
-			out<-EOD{}
-
 		}),
 
 		//  ======================================================

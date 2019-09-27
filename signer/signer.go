@@ -17,61 +17,54 @@ type CrcData struct {
 	afterMd5	bool
 }
 
-func CRC(data string, ind int, outp chan CrcData, inProc *int, mut sync.Mutex, fromMd5 bool) {		//CRC COUNTER
-	//println("Start CRC[" + strconv.Itoa(ind) + "]")
+func CRC(data string, ind int, outp chan CrcData, chanUsr *sync.WaitGroup, fromMd5 bool) {		//CRC COUNTER
+	defer chanUsr.Done()
 	hash := DataSignerCrc32(data)
 	outp<-CrcData{hash, ind, fromMd5}
-	mut.Lock()
-	*inProc--
-	mut.Unlock()
-	//println("Finish CRC[" + strconv.Itoa(ind) + "]")
 	return
 }
 
 func simpleCRC(data string, ind int, outp chan CrcData) {
-	//println("Start CRC[" + strconv.Itoa(ind) + "]")
 	hash := DataSignerCrc32(data)
 	outp<-CrcData{hash, ind, false}
-	//println("Finish CRC[" + strconv.Itoa(ind) + "]")
 	return
 }
 
-func MD5(data string, ind int, outp chan CrcData, inProc *int, mut sync.Mutex) {		//MD5 COUNTER
-	//println("Start MD5[" + strconv.Itoa(ind) + "]")
+func MD5(data string, ind int, outp chan CrcData, chanUsr *sync.WaitGroup) {		//MD5 COUNTER
+	defer chanUsr.Done()
 	hash := DataSignerMd5(data)
 	outp<-CrcData{hash, ind, true}
-	mut.Lock()
-	*inProc--
-	mut.Unlock()
-	//println("Finish MD5[" + strconv.Itoa(ind) + "]")
 	return
 }
 
 
-func startMd5Worker(inp, outp chan CrcData, inProc *int, mut sync.Mutex) {
+func startMd5Worker(inp, outp chan CrcData, chanUsr *sync.WaitGroup, localWorker *sync.WaitGroup) {
+	defer localWorker.Done()
 	println("Start MD5 worker")
 	ticker := time.Tick(11 * time.Millisecond)
 
 	for data := range inp {
 		<-ticker
-		go MD5(data.data, data.ind, outp, inProc, mut)
+		go MD5(data.data, data.ind, outp, chanUsr)
 	}
 	println("Kill MD5 worker")
 	return
 }
 
 
-func startCrcWorker(inp, outp chan CrcData, inProc *int, mut sync.Mutex) {
+func startCrcWorker(inp, outp chan CrcData, chanUsr *sync.WaitGroup, localWorker *sync.WaitGroup) {
+	defer localWorker.Done()
 	println("Start CRC worker")
 	for data := range inp {
-		go CRC(data.data, data.ind, outp, inProc, mut, data.afterMd5)
+		go CRC(data.data, data.ind, outp, chanUsr, data.afterMd5)
 	}
 	println("Kill CRC worker")
 	return
 }
 
 
-func startConstructorWorker(inp chan CrcData, outp chan interface{}) {
+func startConstructorWorker(inp chan CrcData, outp chan interface{}, localWorker *sync.WaitGroup) {
+	defer localWorker.Done()
 	println("Start Constructor worker")
 	concat := make(map[int]string)
 
@@ -90,7 +83,6 @@ func startConstructorWorker(inp chan CrcData, outp chan interface{}) {
 		}
 	}
 	println("Kill Constructor worker")
-	outp <- EOD{}
 	return
 }
 
@@ -146,6 +138,11 @@ func (sorter *stringSorter) Less(i, j int) bool {
 }
 
 
+func wrapper(in, out chan interface{}, worker job) {
+	worker(in, out)
+	for len(out) > 0 {runtime.Gosched()}	// Пока следующий воркер дочитает
+	close(out)
+}
 
 
 func ExecutePipeline(workers ...job) {
@@ -157,10 +154,10 @@ func ExecutePipeline(workers ...job) {
 
 
 	for i, worker := range(workers) {
-		go worker(channels[i], channels[i + 1])
+		go wrapper(channels[i], channels[i + 1], worker)
 	}
 	runtime.Gosched()
-	<-channels[len(channels) - 2]
+	<-channels[len(channels) - 1]
 	time.Sleep(10 * time.Millisecond)
 	return
 
