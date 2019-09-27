@@ -4,9 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"hash/crc32"
-	"runtime"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -46,8 +44,6 @@ func TestPipeline(t *testing.T) {
 		t.Errorf("no value free flow - dont collect them")
 	}
 }
-
-
 
 func TestSigner(t *testing.T) {
 
@@ -105,7 +101,7 @@ func TestSigner(t *testing.T) {
 	}
 
 	inputData := []int{0, 1, 1, 2, 3, 5, 8}
-	//inputData := []int{0,1}
+	// inputData := []int{0,1}
 
 	hashSignJobs := []job{
 		job(func(in, out chan interface{}) {
@@ -113,101 +109,9 @@ func TestSigner(t *testing.T) {
 				out <- fibNum
 			}
 		}),
-		job(func(in, out chan interface{}) {
-			CrcOutput := make(chan CrcData, 1)		// Все результаты CRC идут сюда
-			CrcInput := make(chan CrcData, 1)		// СRС воркер читает отсюда
-			Md5Input := make(chan CrcData, 1)		// MD5 воркер читает отсюда
-
-			channelsUsers := sync.WaitGroup{}		// СRC и MD5 функции используют CrcInput Md5Input которые надо закрыть чтобы убить воркеров
-			localWorkers := sync.WaitGroup{}
-
-			localWorkers.Add(3)
-			go startMd5Worker(Md5Input, CrcInput, &channelsUsers, &localWorkers)
-			go startCrcWorker(CrcInput, CrcOutput, &channelsUsers, &localWorkers)
-			go startConstructorWorker(CrcOutput, out, &localWorkers)
-
-			i := 0
-			for data := range in {
-				dataString := strconv.Itoa(data.(int))
-				channelsUsers.Add(3)
-				Md5Input <- CrcData{dataString, i, true}
-				CrcInput <- CrcData{dataString, i, false}
-				i++
-				runtime.Gosched()
-			}
-
-			channelsUsers.Wait()
-			close(Md5Input)
-			close(CrcInput)
-			for len(CrcOutput) > 0 {runtime.Gosched()}		// Новым данным неоткуда взяться, спим пока конструктор их соберет
-			close(CrcOutput)								// Это убьет конструктор
-			localWorkers.Wait()
-			return
-		}),
-
-		//  ======================================================
-
-		job(func(in, out chan interface{}) {
-			finish := make(chan bool, 6)
-			dataNum := 0
-			multi := make([]chan CrcData, 0)
-
-			for data := range in {
-				println("input-----", data.(string))
-
-				multi = append(multi, make(chan CrcData, 6))
-				dataString := data.(string)
-
-				for th := 0; th < 6; th++ {
-					go simpleCRC(strconv.Itoa(th) + dataString, th, multi[dataNum])
-				}
-				go startMultiConstructorWorker(multi[dataNum], out, finish)
-				dataNum++
-				runtime.Gosched()
-			}
-			println("BREAK WORKER 2")
-
-			println("Wait constructors begin")
-			for constructorNum := 0; constructorNum < dataNum; {
-				<-finish
-				constructorNum++
-				println(constructorNum)
-			}
-			println("Constructors end")
-		}),
-
-		//  ======================================================
-
-		job(func(in, out chan interface{}) {
-			simple := func(str1, str2 *string) bool {
-				return *str1 < *str2
-			}
-
-			var sortData []string
-
-			for data := range in {
-				if _, ok := data.(EOD); ok {
-					break
-				}
-				sortData = append(sortData, data.(string))
-			}
-			println("BREAK WORKER 3")
-
-			By(simple).Sort(sortData)
-
-			result := ""
-			for i, str := range sortData {
-				result += str
-				if i != len(sortData) - 1 {
-					result += "_"
-				}
-			}
-
-			out<-result
-		}),
-
-		//  ======================================================
-
+		job(SingleHash),
+		job(MultiHash),
+		job(CombineResults),
 		job(func(in, out chan interface{}) {
 			dataRaw := <-in
 			data, ok := dataRaw.(string)
@@ -215,7 +119,6 @@ func TestSigner(t *testing.T) {
 				t.Error("cant convert result data to string")
 			}
 			testResult = data
-			println(testResult)
 		}),
 	}
 
@@ -244,5 +147,3 @@ func TestSigner(t *testing.T) {
 	}
 
 }
-
-
