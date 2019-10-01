@@ -15,17 +15,22 @@ type TestSort struct {
 		flagK int
 }
 
+const IgnorCase = true
+const Unique = true
+const Reverse = true
+const Numeric = true
+
 
 func TestFileIO(t *testing.T) {
 	keys := []TestSort {
 		{false, false,  false, false, 0},
 		{false, false,  false, false, 0},
-		{true, false,  false, false, 0},		// Ignore register
-		{false, true,  false, false, 0},		// Unique
-		{true, true,  false, false, 0},		// Ignore + Unique
-		{true, true,  true, false, 0},		// Ignore + Unique + Reverse
-		{true, true,  true, false, 2},		// Ignore + Unique + Reverse + Column
-		{true, true,  true, true, 2},		// Ignore + Unique + Reverse + Column + Numeric
+		{IgnorCase, false,  false, false, 0},		// Ignore register
+		{false, Unique,  false, false, 0},		// Unique
+		{IgnorCase, Unique,  false, false, 0},		// Ignore + Unique
+		{IgnorCase, Unique,  Reverse, false, 0},		// Ignore + Unique + Reverse
+		{IgnorCase, Unique,  Reverse, false, 2},		// Ignore + Unique + Reverse + Column
+		{IgnorCase, Unique,  Reverse, Numeric, 2},		// Ignore + Unique + Reverse + Column + Numeric
 	}
 
 
