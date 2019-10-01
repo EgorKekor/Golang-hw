@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -339,18 +341,18 @@ func (calc *Calculator) Parse() {
 
 
 
-//func main()  {
-//	if (len(os.Args) < 2) {
-//		println("expression error")
-//		return
-//	}
-//	expression := strings.Join(os.Args[1:], "")
-//	calculator := NewCalculator(expression)
-//
-//	calculator.Parse()
-//	if val, err := calculator.Count(); err == nil {
-//		fmt.Printf("%.5f", val)
-//	} else {
-//		println("expression error")
-//	}
-//}
+func main()  {
+	if (len(os.Args) < 2) {
+		println("expression error")
+		return
+	}
+	expression := strings.Join(os.Args[1:], "")
+	calculator := NewCalculator(expression)
+
+	calculator.Parse()
+	if val, err := calculator.Count(); err == nil {
+		fmt.Printf("%.5f", val)
+	} else {
+		println("expression error")
+	}
+}

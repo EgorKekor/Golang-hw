@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strconv"
 	"sync"
-	"time"
 )
 
 const operationsAmount = 6
@@ -16,10 +15,13 @@ type CrcData struct {
 	afterMd5	bool
 }
 
-func CRC(data string, ind int, outp chan CrcData, chanUsr *sync.WaitGroup, fromMd5 bool) {
-	defer chanUsr.Done()
-	hash := DataSignerCrc32(data)
-	outp<-CrcData{hash, ind, fromMd5}
+func CRC(inp, outp chan CrcData, calculation *sync.WaitGroup) {
+	defer calculation.Done()
+	if data, ok := <-inp; ok {
+		hash := DataSignerCrc32(data.data)
+		outp <- CrcData{hash, data.ind, data.afterMd5}
+		return
+	}
 	return
 }
 
@@ -29,38 +31,20 @@ func simpleCRC(data string, ind int, outp chan CrcData) {
 	return
 }
 
-func MD5(data string, ind int, outp chan CrcData, chanUsr *sync.WaitGroup) {
-	defer chanUsr.Done()
-	hash := DataSignerMd5(data)
-	outp<-CrcData{hash, ind, true}
-	return
-}
+func MD5(inp, outp chan CrcData, mut *sync.Mutex, calculation *sync.WaitGroup) {
+	defer calculation.Done()
+	if data, ok := <-inp; ok {
+		mut.Lock()
+		hash := DataSignerMd5(data.data)
+		mut.Unlock()
+		outp<-CrcData{hash, data.ind, true}
 
-
-func startMd5Worker(inp, outp chan CrcData, chanUsr *sync.WaitGroup, localWorker *sync.WaitGroup) {
-	const overheat = 11 * time.Millisecond
-	defer localWorker.Done()
-	println("Start MD5 worker")
-	ticker := time.Tick(overheat)
-
-	for data := range inp {
-		<-ticker
-		go MD5(data.data, data.ind, outp, chanUsr)
+		return
 	}
-	println("Kill MD5 worker")
+
 	return
 }
 
-
-func startCrcWorker(inp, outp chan CrcData, chanUsr *sync.WaitGroup, localWorker *sync.WaitGroup) {
-	defer localWorker.Done()
-	println("Start CRC worker")
-	for data := range inp {
-		go CRC(data.data, data.ind, outp, chanUsr, data.afterMd5)
-	}
-	println("Kill CRC worker")
-	return
-}
 
 
 func startConstructorWorker(inp chan CrcData, outp chan interface{}, localWorker *sync.WaitGroup) {
@@ -113,30 +97,32 @@ func SingleHash(in, out chan interface{}) {
 	CrcInput := make(chan CrcData, 1)		// СRС воркер читает отсюда
 	Md5Input := make(chan CrcData, 1)		// MD5 воркер читает отсюда
 
-	channelsUsers := sync.WaitGroup{}		// СRC и MD5 функции используют CrcInput Md5Input которые надо закрыть чтобы убить воркеров
-	localWorkers := sync.WaitGroup{}
+	md5Mut := sync.Mutex{}
 
-	localWorkers.Add(3)
-	go startMd5Worker(Md5Input, CrcInput, &channelsUsers, &localWorkers)
-	go startCrcWorker(CrcInput, CrcOutput, &channelsUsers, &localWorkers)
-	go startConstructorWorker(CrcOutput, out, &localWorkers)
+	localWorker := sync.WaitGroup{}
+	calculation := sync.WaitGroup{}
+
+	localWorker.Add(1)
+	go startConstructorWorker(CrcOutput, out, &localWorker)
 
 	i := 0
 	for data := range in {
 		dataString := strconv.Itoa(data.(int))
-		channelsUsers.Add(3)
-		Md5Input <- CrcData{dataString, i, true}
 		CrcInput <- CrcData{dataString, i, false}
+		Md5Input <- CrcData{dataString, i, false}
+		calculation.Add(3)
+		go MD5(Md5Input, CrcInput, &md5Mut, &calculation)
+		go CRC(CrcInput, CrcOutput, &calculation)
+		go CRC(CrcInput, CrcOutput, &calculation)
 		i++
 		runtime.Gosched()
 	}
 
-	channelsUsers.Wait()
+	calculation.Wait()
 	close(Md5Input)
 	close(CrcInput)
-	for len(CrcOutput) > 0 {runtime.Gosched()}		// Новым данным неоткуда взяться, спим пока конструктор их соберет
-	close(CrcOutput)								// Это убьет конструктор
-	localWorkers.Wait()
+	close(CrcOutput)
+	localWorker.Wait()
 	return
 }
 
@@ -203,6 +189,28 @@ func ExecutePipeline(workers ...job) {
 	return
 
 }
+
+
+
+//func main() {
+//	ch := make(chan int, 10)
+//	for i := 0; i < 10; i++ {
+//		ch <- i
+//	}
+//	close(ch)
+//	time.Sleep(1000 * time.Millisecond)
+//	go func(c chan int){
+//		println("in")
+//		for i := 0; i < 12; i++ {
+//			val, err := <-c
+//			println(val, " ", err)
+//		}
+//	}(ch)
+//	runtime.Gosched()
+//
+//
+//	time.Sleep(1000 * time.Millisecond)
+//}
 
 
 
