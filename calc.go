@@ -340,10 +340,17 @@ func (calc *Calculator) Parse() {
 
 
 //func main()  {
+//	if (len(os.Args) < 2) {
+//		println("expression error")
+//		return
+//	}
 //	expression := strings.Join(os.Args[1:], "")
 //	calculator := NewCalculator(expression)
 //
 //	calculator.Parse()
-//	val, _ := calculator.Count()
-//	fmt.Printf("%.5f", val)
+//	if val, err := calculator.Count(); err == nil {
+//		fmt.Printf("%.5f", val)
+//	} else {
+//		println("expression error")
+//	}
 //}

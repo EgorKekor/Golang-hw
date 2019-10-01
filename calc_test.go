@@ -59,6 +59,12 @@ func TestCalculator(t *testing.T) {
 			description:	"Тест на ошибки в формуле",
 			err:		nil,
 		},
+		TestCalc{
+			expression: ":((",
+			result:     0,
+			description:	"Тест на ошибки в формуле",
+			err:		ErrInvalidExpression,
+		},
 	}
 
 	for testNum, item := range(tests) {

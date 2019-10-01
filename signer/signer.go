@@ -8,9 +8,7 @@ import (
 	"time"
 )
 
-type EOD struct {
-
-}
+const operationsAmount = 6
 
 type CrcData struct {
 	data	string
@@ -40,9 +38,10 @@ func MD5(data string, ind int, outp chan CrcData, chanUsr *sync.WaitGroup) {
 
 
 func startMd5Worker(inp, outp chan CrcData, chanUsr *sync.WaitGroup, localWorker *sync.WaitGroup) {
+	const overheat = 11 * time.Millisecond
 	defer localWorker.Done()
 	println("Start MD5 worker")
-	ticker := time.Tick(11 * time.Millisecond)
+	ticker := time.Tick(overheat)
 
 	for data := range inp {
 		<-ticker
@@ -92,50 +91,19 @@ func startMultiConstructorWorker(inp chan CrcData, outp chan interface{}, localW
 	defer localWorker.Done()
 	println("Start MultiConstructor worker")
 	concat := make(map[int]string)
-	for th := 0; th < 6; th++ {
+	for th := 0; th < operationsAmount; th++ {
 		data := <-inp
 		concat[data.ind] = data.data
 	}
 
 	result := ""
-	for th := 0; th < 6; th++ {
+	for th := 0; th < operationsAmount; th++ {
 		result += concat[th]
 	}
 	outp<-result
 
 	println("Kill MultiConstructor worker")
 	return
-}
-
-
-type By func(str1, str2 *string) bool
-
-func (by By) Sort(str []string) {
-	sortCfg := &stringSorter {
-		obj: str,
-		by:  by,
-	}
-	sort.Sort(sortCfg)
-}
-
-
-type stringSorter struct {
-	obj []string
-	by  func(str1, str2 *string) bool
-}
-
-
-func (sorter *stringSorter) Len() int {
-	return len(sorter.obj)
-}
-
-func (sorter *stringSorter) Swap(i, j int) {
-	sorter.obj[i], sorter.obj[j] = sorter.obj[j], sorter.obj[i]
-}
-
-
-func (sorter *stringSorter) Less(i, j int) bool {
-	return sorter.by(&sorter.obj[i], &sorter.obj[j])
 }
 
 //  ==============================================================
@@ -182,7 +150,7 @@ func MultiHash(in, out chan interface{}) {
 		multi = append(multi, make(chan CrcData, 6))
 		dataString := data.(string)
 
-		for th := 0; th < 6; th++ {
+		for th := 0; th < operationsAmount; th++ {
 			go simpleCRC(strconv.Itoa(th) + dataString, th, multi[dataNum])
 		}
 
@@ -195,16 +163,12 @@ func MultiHash(in, out chan interface{}) {
 
 
 func CombineResults(in, out chan interface{}) {
-	simple := func(str1, str2 *string) bool {
-		return *str1 < *str2
-	}
-
 	var sortData []string
 	for data := range in {
 		sortData = append(sortData, data.(string))
 	}
 
-	By(simple).Sort(sortData)
+	sort.Strings(sortData)
 
 	var result string
 	for i, str := range sortData {
@@ -213,14 +177,12 @@ func CombineResults(in, out chan interface{}) {
 			result += "_"
 		}
 	}
-
 	out<-result
 }
 
 
 func wrapper(in, out chan interface{}, worker job) {
 	worker(in, out)
-	for len(out) > 0 {runtime.Gosched()}	// Пока следующий воркер дочитает
 	close(out)
 }
 
@@ -229,7 +191,7 @@ func ExecutePipeline(workers ...job) {
 	channels := make([]chan interface{}, 0, len(workers))
 	runtime.GOMAXPROCS(4)
 	for i := 0; i < len(workers) + 1; i++ {
-		channels = append(channels, make(chan interface{}, 10))
+		channels = append(channels, make(chan interface{}, 1))
 	}
 
 
@@ -238,7 +200,14 @@ func ExecutePipeline(workers ...job) {
 	}
 	runtime.Gosched()
 	<-channels[len(channels) - 1]
-	time.Sleep(10 * time.Millisecond)
 	return
 
 }
+
+
+
+
+
+
+
+
