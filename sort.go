@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"log"
 	"math"
@@ -33,41 +32,29 @@ func createSortObject(r io.Reader, columnSort int) (sortObject) {
 				wordNum++
 			}
 
-			if (wordNum == columnSort) {
+			if wordNum == columnSort {
 				obj.sortSelect = append(obj.sortSelect, strScanner.Text())
 			} else {
 				obj.sortSelect = append(obj.sortSelect, "")
 			}
-		}
-	}
-	if err := fileScanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading file lines:", err)
-	}
-
-	if len(obj.sortSelect) == 0 {
-		for i, _ := range (obj.lines) {
+		} else {
 			obj.sortSelect = append(obj.sortSelect, obj.lines[i])
 		}
 	}
 
-	return obj;
+	return obj
 }
 
 func (sObj *sortObject) setUniqueMode() {
 	var dublicateSelect []string
 	var dublicateLines []string
-	for orig := 0; orig < len(sObj.lines); orig++ {
-		unique := true
-		for dub := 0; dub < len(dublicateSelect); dub++ {
-			if (sObj.sortSelect[orig] == dublicateSelect[dub]) {
-				unique = false
-				break;
-			}
-		}
 
-		if unique {
-			dublicateSelect = append(dublicateSelect, sObj.sortSelect[orig])
-			dublicateLines = append(dublicateLines, sObj.lines[orig])
+	dublicate := make(map[string]bool)
+	for i, orig := range(sObj.sortSelect) {
+		if _, ok := dublicate[orig]; !ok {
+			dublicate[orig] = true
+			dublicateSelect = append(dublicateSelect, sObj.sortSelect[i])
+			dublicateLines = append(dublicateLines, sObj.lines[i])
 		}
 	}
 	sObj.sortSelect = dublicateSelect
@@ -77,7 +64,6 @@ func (sObj *sortObject) setUniqueMode() {
 func (sObj *sortObject) setLowerCaseMode() {
 	for i := 0; i < len(sObj.lines); i++ {
 		sObj.sortSelect[i] = strings.ToLower(sObj.sortSelect[i])
-		sObj.lines[i] = strings.ToLower(sObj.lines[i])
 	}
 }
 
@@ -106,12 +92,12 @@ func (sObj *sortObject) writeInFile(ok bool, filename string) {
 	if ok {
 		resultFile, err := os.OpenFile(filename, os.O_RDWR | os.O_CREATE, 0755)
 		if err != nil {
-			log.Fatal(err)
+			log.Panicln(err)
 			return
 		}
 		defer func() {
 			if err := resultFile.Close(); err != nil {
-				log.Fatal(err)
+				log.Panicln(err)
 			}
 		}()
 		output = resultFile
@@ -121,7 +107,10 @@ func (sObj *sortObject) writeInFile(ok bool, filename string) {
 
 
 	for _, str := range (sObj.lines) {
-		io.Copy(output, strings.NewReader(str + "\n"))
+		if _, err := io.Copy(output, strings.NewReader(str+"\n")); err != nil {
+			log.Panicln(err)
+			return
+		}
 	}
 }
 
@@ -135,7 +124,7 @@ func (by By) Sort(srt_ sortObject) {
 		obj: srt_,
 		by:  by,
 	}
-	sort.Sort(sortCfg)
+	sort.Stable(sortCfg)
 }
 
 
@@ -173,20 +162,20 @@ func (sorter *stringSorter) Less(i, j int) bool {
 //	flag.Parse()
 //
 //
-//	fileName :=  flag.Args();
+//	fileName :=  flag.Args()
 //	sourceFile, err := os.OpenFile(fileName[0], os.O_RDONLY, 0755)
 //	if err != nil {
-//		log.Fatal(err)
+//		log.Panicln(err)
 //		return
 //	}
 //	defer func() {
 //		if err := sourceFile.Close(); err != nil {
-//			log.Fatal(err)
+//			log.Panicln(err)
 //		}
 //	}()
 //
 //
-//	sortingObj := createSortObject(sourceFile, *flagK);
+//	sortingObj := createSortObject(sourceFile, *flagK)
 //
 //	simple := func(str1, str2 *string) bool {
 //		return *str1 < *str2

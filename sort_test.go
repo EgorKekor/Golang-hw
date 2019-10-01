@@ -31,14 +31,14 @@ func TestFileIO(t *testing.T) {
 
 
 	for test, _ := range(keys) {
-		sourceFile, errTest := os.OpenFile("test" + strconv.Itoa(test + 1) + ".dat", os.O_RDONLY, 0755)
+		sourceFile, errTest := os.OpenFile("sort_cases/test" + strconv.Itoa(test + 1) + ".dat", os.O_RDONLY, 0755)
 		if errTest != nil {
 			log.Fatal(errTest)
 			return
 		}
 
 
-		etalonFile, err := os.OpenFile("test" + strconv.Itoa(test + 1) + "_etalon.dat", os.O_RDONLY, 0755)
+		etalonFile, err := os.OpenFile("sort_cases/test" + strconv.Itoa(test + 1) + "_etalon.dat", os.O_RDONLY, 0755)
 		if err != nil {
 			log.Fatal(err)
 			return
