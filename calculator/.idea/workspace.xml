@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="8be6b361-4ae5-4dca-8d97-be7e1a51578f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../calc.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../calc_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../signer/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../signer/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../signer/signer.go" beforeDir="false" afterPath="$PROJECT_DIR$/../signer/signer.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test1.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test1_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test2.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test2_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test3.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test3_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test4.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test4_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test5.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test5_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test6.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test6_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test7.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test7_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test8.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_cases/test8_etalon.dat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort_test.go" beforeDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GOROOT" path="/usr/local/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectId" id="1RcBR6qXSeEJnjdXxc1u0QFeH57" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../sort" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

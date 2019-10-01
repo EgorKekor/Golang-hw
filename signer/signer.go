@@ -15,6 +15,8 @@ type CrcData struct {
 	afterMd5	bool
 }
 
+var md5GlobalMutex sync.Mutex
+
 func CRC(inp, outp chan CrcData, calculation *sync.WaitGroup) {
 	defer calculation.Done()
 	if data, ok := <-inp; ok {
@@ -97,7 +99,7 @@ func SingleHash(in, out chan interface{}) {
 	CrcInput := make(chan CrcData, 1)		// СRС воркер читает отсюда
 	Md5Input := make(chan CrcData, 1)		// MD5 воркер читает отсюда
 
-	md5Mut := sync.Mutex{}
+	md5Mut := &md5GlobalMutex
 
 	localWorker := sync.WaitGroup{}
 	calculation := sync.WaitGroup{}
@@ -111,7 +113,7 @@ func SingleHash(in, out chan interface{}) {
 		CrcInput <- CrcData{dataString, i, false}
 		Md5Input <- CrcData{dataString, i, false}
 		calculation.Add(3)
-		go MD5(Md5Input, CrcInput, &md5Mut, &calculation)
+		go MD5(Md5Input, CrcInput, md5Mut, &calculation)
 		go CRC(CrcInput, CrcOutput, &calculation)
 		go CRC(CrcInput, CrcOutput, &calculation)
 		i++
@@ -180,7 +182,6 @@ func ExecutePipeline(workers ...job) {
 		channels = append(channels, make(chan interface{}, 1))
 	}
 
-
 	for i, worker := range(workers) {
 		go wrapper(channels[i], channels[i + 1], worker)
 	}
@@ -190,27 +191,6 @@ func ExecutePipeline(workers ...job) {
 
 }
 
-
-
-//func main() {
-//	ch := make(chan int, 10)
-//	for i := 0; i < 10; i++ {
-//		ch <- i
-//	}
-//	close(ch)
-//	time.Sleep(1000 * time.Millisecond)
-//	go func(c chan int){
-//		println("in")
-//		for i := 0; i < 12; i++ {
-//			val, err := <-c
-//			println(val, " ", err)
-//		}
-//	}(ch)
-//	runtime.Gosched()
-//
-//
-//	time.Sleep(1000 * time.Millisecond)
-//}
 
 
 

@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="b3043bb3-4eb2-4369-b8a9-153a1a8dc6a4" name="Default Changelist" comment="" />
+    <list default="true" id="b3043bb3-4eb2-4369-b8a9-153a1a8dc6a4" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/signer.go" beforeDir="false" afterPath="$PROJECT_DIR$/signer.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../sort.go" beforeDir="false" afterPath="$PROJECT_DIR$/../sort.go" afterDir="false" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

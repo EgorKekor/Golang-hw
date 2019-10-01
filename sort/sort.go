@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"io"
 	"log"
 	"math"
@@ -151,62 +152,62 @@ func (sorter *stringSorter) Less(i, j int) bool {
 //  =========================================
 
 
-//func main() {
-//
-//	flagF := flag.Bool("f", false, "Ignore register")
-//	flagU := flag.Bool("u", false, "Unique")
-//	flagR := flag.Bool("r", false, "Sort low")
-//	flagO := flag.Bool("o", false, "Write file")
-//	flagN := flag.Bool("n", false, "Numbers sort")
-//	flagK := flag.Int("k", 0, "Col number")
-//	flag.Parse()
-//
-//
-//	fileName :=  flag.Args()
-//	sourceFile, err := os.OpenFile(fileName[0], os.O_RDONLY, 0755)
-//	if err != nil {
-//		log.Panicln(err)
-//		return
-//	}
-//	defer func() {
-//		if err := sourceFile.Close(); err != nil {
-//			log.Panicln(err)
-//		}
-//	}()
-//
-//
-//	sortingObj := createSortObject(sourceFile, *flagK)
-//
-//	simple := func(str1, str2 *string) bool {
-//		return *str1 < *str2
-//	}
-//
-//	reverse := func(str1, str2 *string) bool {
-//		return *str1 > *str2
-//	}
-//
-//
-//
-//	if *flagF {
-//		sortingObj.setLowerCaseMode()
-//	}
-//
-//	if *flagU {
-//		sortingObj.setUniqueMode()
-//	}
-//
-//	if *flagN {
-//		sortingObj.setNumericMode()
-//	}
-//
-//
-//	if *flagR {
-//		By(reverse).Sort(sortingObj)
-//	} else {
-//		By(simple).Sort(sortingObj)
-//	}
-//
-//
-//	sortingObj.writeInFile(*flagO, "result.dat")
-//
-//}
+func main() {
+
+	flagF := flag.Bool("f", false, "Ignore register")
+	flagU := flag.Bool("u", false, "Unique")
+	flagR := flag.Bool("r", false, "Sort low")
+	flagO := flag.Bool("o", false, "Write file")
+	flagN := flag.Bool("n", false, "Numbers sort")
+	flagK := flag.Int("k", 0, "Col number")
+	flag.Parse()
+
+
+	fileName :=  flag.Args()
+	sourceFile, err := os.OpenFile(fileName[0], os.O_RDONLY, 0755)
+	if err != nil {
+		log.Panicln(err)
+		return
+	}
+	defer func() {
+		if err := sourceFile.Close(); err != nil {
+			log.Panicln(err)
+		}
+	}()
+
+
+	sortingObj := createSortObject(sourceFile, *flagK)
+
+	simple := func(str1, str2 *string) bool {
+		return *str1 < *str2
+	}
+
+	reverse := func(str1, str2 *string) bool {
+		return *str1 > *str2
+	}
+
+
+
+	if *flagF {
+		sortingObj.setLowerCaseMode()
+	}
+
+	if *flagU {
+		sortingObj.setUniqueMode()
+	}
+
+	if *flagN {
+		sortingObj.setNumericMode()
+	}
+
+
+	if *flagR {
+		By(reverse).Sort(sortingObj)
+	} else {
+		By(simple).Sort(sortingObj)
+	}
+
+
+	sortingObj.writeInFile(*flagO, "result.dat")
+
+}
